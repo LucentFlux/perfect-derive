@@ -1,0 +1,27 @@
+[package]
+name = "perfect-derive"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Provides a prototype of the proposed perfect_derive macro"
+homepage = "https://github.com/LucentFlux/perfect-derive"
+repository = "https://github.com/LucentFlux/perfect-derive"
+readme = "README.md"
+keywords = ["macro", "derive", "utility"]
+categories = ["development-tools::procedural-macro-helpers", "rust-patterns"]
+include = [
+    "/Cargo.toml",
+    "/LICENSE",
+    "/README.md",
+    "/src/**",
+    "/tests/**",
+]
+
+[dependencies]
+syn = { version = "1.0", features=["full"] }
+proc-macro2 = "1.0"
+quote = "1.0"
+cps = "0.2.1"
+
+[lib]
+proc-macro = true
