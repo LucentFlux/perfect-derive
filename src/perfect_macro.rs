@@ -5,8 +5,8 @@ use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::token::Where;
 use syn::{
-    Fields, GenericParam, Generics, ItemEnum, Lifetime, PredicateType, TypeParamBound, WhereClause,
-    WherePredicate,
+    Fields, FieldsNamed, FieldsUnnamed, GenericParam, Generics, ItemEnum, ItemStruct, Lifetime,
+    PredicateType, TypeParamBound, WhereClause, WherePredicate,
 };
 
 pub fn impl_traits(traits: DerivedList, obj: StructOrEnum) -> TokenStream {
@@ -147,91 +147,28 @@ fn augment_where_clause(
     };
 }
 
+fn get_named_idents(names: &FieldsNamed) -> Vec<Ident> {
+    names
+        .named
+        .iter()
+        .map(|f| f.ident.clone().unwrap())
+        .collect::<Vec<_>>()
+}
+
+fn get_unnamed_idents(unnamed: &FieldsUnnamed) -> Vec<Ident> {
+    unnamed
+        .unnamed
+        .iter()
+        .enumerate()
+        .map(|(i, f)| Ident::new(&format! {"v{}", i}, f.ty.span()))
+        .collect::<Vec<_>>()
+}
+
 fn gen_type_impl_body(trait_to_impl: DerivedType, obj: &StructOrEnum) -> TokenStream {
     match (trait_to_impl.name, obj) {
         (DerivedTypeEnum::Copy, _) => quote!(),
-        (DerivedTypeEnum::Clone, StructOrEnum::Struct(s)) => match &s.fields {
-            Fields::Named(names) => {
-                let idents = names
-                    .named
-                    .iter()
-                    .map(|f| f.ident.clone().unwrap())
-                    .collect::<Vec<_>>();
-
-                quote! {
-                    fn clone(&self) -> Self {
-                        let Self{ #(#idents),* } = self;
-                        Self{ #(#idents : #idents.clone()),* }
-                    }
-                }
-            }
-            Fields::Unnamed(unnamed) => {
-                let idents = unnamed
-                    .unnamed
-                    .iter()
-                    .enumerate()
-                    .map(|(i, f)| Ident::new(&format! {"v{}", i}, f.ty.span()))
-                    .collect::<Vec<_>>();
-
-                quote! {
-                    fn clone(&self) -> Self {
-                        let Self( #(#idents),* ) = self;
-                        Self( #(#idents.clone()),* )
-                    }
-                }
-            }
-            Fields::Unit => quote! {
-                fn clone(&self) -> Self {
-                    Self
-                }
-            },
-        },
-        (DerivedTypeEnum::Clone, StructOrEnum::Enum(e)) => {
-            let variant_cases = e
-                .variants
-                .iter()
-                .map(|v| {
-                    let ident = v.ident.clone();
-                    match &v.fields {
-                        Fields::Named(names) => {
-                            let idents = names
-                                .named
-                                .iter()
-                                .map(|f| f.ident.clone().unwrap())
-                                .collect::<Vec<_>>();
-
-                            quote! {
-                                Self::#ident{#(#idents),*} => Self::#ident{#(#idents : #idents.clone()),*}
-                            }
-                        }
-                        Fields::Unnamed(unnamed) => {
-                            let idents = unnamed
-                                .unnamed
-                                .iter()
-                                .enumerate()
-                                .map(|(i, f)| Ident::new(&format! {"v{}", i}, f.ty.span()))
-                                .collect::<Vec<_>>();
-
-                            quote! {
-                                Self::#ident(#(#idents),*) => Self::#ident(#(#idents.clone()),*)
-                            }
-                        }
-                        Fields::Unit => quote! {
-                            Self::#ident => Self::#ident
-                        },
-                    }
-                })
-                .collect::<Vec<_>>();
-            quote! {
-                fn clone(&self) -> Self {
-                    match self {
-                        #(
-                            #variant_cases
-                        ),*
-                    }
-                }
-            }
-        }
+        (DerivedTypeEnum::Clone, StructOrEnum::Struct(s)) => clone_struct(s),
+        (DerivedTypeEnum::Clone, StructOrEnum::Enum(e)) => clone_enum(e),
         (DerivedTypeEnum::PartialEq, StructOrEnum::Struct(s)) => unimplemented!(),
         (DerivedTypeEnum::PartialEq, StructOrEnum::Enum(e)) => unimplemented!(),
         (DerivedTypeEnum::Eq, _) => quote!(),
@@ -245,5 +182,73 @@ fn gen_type_impl_body(trait_to_impl: DerivedType, obj: &StructOrEnum) -> TokenSt
         (DerivedTypeEnum::Debug, StructOrEnum::Enum(e)) => unimplemented!(),
         (DerivedTypeEnum::Default, StructOrEnum::Struct(s)) => unimplemented!(),
         (DerivedTypeEnum::Default, StructOrEnum::Enum(e)) => unimplemented!(),
+    }
+}
+
+fn clone_struct(s: &ItemStruct) -> TokenStream {
+    match &s.fields {
+        Fields::Named(names) => {
+            let idents = get_named_idents(names);
+
+            quote! {
+                fn clone(&self) -> Self {
+                    let Self{ #(#idents),* } = self;
+                    Self{ #(#idents : #idents.clone()),* }
+                }
+            }
+        }
+        Fields::Unnamed(unnamed) => {
+            let idents = get_unnamed_idents(unnamed);
+
+            quote! {
+                fn clone(&self) -> Self {
+                    let Self( #(#idents),* ) = self;
+                    Self( #(#idents.clone()),* )
+                }
+            }
+        }
+        Fields::Unit => quote! {
+            fn clone(&self) -> Self {
+                Self
+            }
+        },
+    }
+}
+
+fn clone_enum(e: &ItemEnum) -> TokenStream {
+    let variant_cases = e
+        .variants
+        .iter()
+        .map(|v| {
+            let ident = v.ident.clone();
+            match &v.fields {
+                Fields::Named(names) => {
+                    let idents = get_named_idents(names);
+
+                    quote! {
+                        Self::#ident{#(#idents),*} => Self::#ident{#(#idents : #idents.clone()),*}
+                    }
+                }
+                Fields::Unnamed(unnamed) => {
+                    let idents = get_unnamed_idents(unnamed);
+
+                    quote! {
+                        Self::#ident(#(#idents),*) => Self::#ident(#(#idents.clone()),*)
+                    }
+                }
+                Fields::Unit => quote! {
+                    Self::#ident => Self::#ident
+                },
+            }
+        })
+        .collect::<Vec<_>>();
+    quote! {
+        fn clone(&self) -> Self {
+            match self {
+                #(
+                    #variant_cases
+                ),*
+            }
+        }
     }
 }
