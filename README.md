@@ -1,7 +1,7 @@
 # Perfect Derive
 Adds derive macros for better bounds on generated Copy, Debug, etc. implementations.
 
-See https://smallcultfollowing.com/babysteps//blog/2022/04/12/implied-bounds-and-perfect-derive/ for a summary of the issue.
+See [this blog post](https://smallcultfollowing.com/babysteps//blog/2022/04/12/implied-bounds-and-perfect-derive/) for a summary of the issue.
 
 Since Rust cannot handle cyclic bounds, these macros won't always work. Ideally, in a few years this crate can become a no-op and there will be some way to do this in plain Rust, but until then this hack helps clean up some code.
 
@@ -59,3 +59,5 @@ where
     fn clone(&self) { /* as before */ }
 }
 ```
+
+Note that these bounds do not require that `T` is itself clonable.

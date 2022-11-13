@@ -5,7 +5,9 @@ use quote::ToTokens;
 use syn::parse::discouraged::Speculative;
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
-use syn::{Generics, ItemEnum, ItemStruct, Path, Token, TraitBound, TraitBoundModifier};
+use syn::{
+    parse_quote, Generics, ItemEnum, ItemStruct, Path, Token, TraitBound, TraitBoundModifier,
+};
 
 #[cps::cps]
 macro_rules! supported_types_enum {
@@ -13,6 +15,7 @@ macro_rules! supported_types_enum {
     ($p:vis enum $name:ident) =>
     let $($val:ident,)* = impls!() in
     {
+        #[derive(Eq, PartialEq, Hash, Debug, Copy, Clone)]
         $p enum $name {
             $($val,)*
         }
@@ -27,32 +30,36 @@ pub struct DerivedType {
 }
 
 #[cps::cps]
-macro_rules! ident_enum {
-    (pub fn $fn_ident:ident(&self) -> $ret:ident;) =>
+macro_rules! type_enum_ident_as_path {
+    ($self_name:expr) =>
     let $($val:ident,)* = impls!() in
     {
-        pub fn $fn_ident(&self) -> $ret {
-            match self.name {
-                $(
-                    DerivedTypeEnum::$val => Ident::new(stringify!($val), self.span.into())
-                ),*
-            }
+        match $self_name.name {
+            $(
+                DerivedTypeEnum::$val => Path::from(Ident::new(stringify!($val), $self_name.span.into()))
+            ),*
         }
     };
 }
 
 impl DerivedType {
-    ident_enum!(
-        pub fn ident(&self) -> Ident;
-    );
+    pub fn path(&self) -> Path {
+        match &self.name {
+            DerivedTypeEnum::Hash => return parse_quote! {std::hash::Hash},
+            DerivedTypeEnum::Debug => return parse_quote! {std::fmt::Debug},
+            _ => {} // fall through to default unscoped path
+        }
+
+        return type_enum_ident_as_path!(self);
+    }
 
     pub fn get_trait(&self) -> TraitBound {
-        let ident = self.ident();
+        let path = self.path();
         TraitBound {
             paren_token: None,
             modifier: TraitBoundModifier::None,
             lifetimes: None,
-            path: Path::from(ident),
+            path,
         }
     }
 }
