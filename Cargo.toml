@@ -23,5 +23,8 @@ proc-macro2 = "1.0"
 quote = "1.0"
 cps = "0.2.1"
 
+[dev-dependencies]
+thiserror = "1.0"
+
 [lib]
 proc-macro = true

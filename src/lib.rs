@@ -27,6 +27,7 @@ use syn::parse_macro_input;
 ///
 /// ```rust
 /// # use std::rc::Rc;
+/// # use perfect_derive::perfect_derive;
 ///
 /// #[derive(thiserror::Error)]
 /// #[perfect_derive(Clone, Debug)]

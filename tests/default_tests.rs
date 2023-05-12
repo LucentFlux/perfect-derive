@@ -5,7 +5,7 @@ pub struct Error {}
 
 #[perfect_derive(Clone)]
 pub struct ResultWrapper<Ok, Err = Error> {
-    data: Rc<Result<Ok, Error>>,
+    data: Rc<Result<Ok, Err>>,
 }
 
 #[test]
