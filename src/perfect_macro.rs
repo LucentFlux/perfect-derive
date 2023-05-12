@@ -100,13 +100,32 @@ fn extract_idents(generics: &Generics) -> Vec<IdentOrLifetime> {
         .collect()
 }
 
+fn remove_defaults(generics: &mut Generics) {
+    for generic in generics.params.iter_mut() {
+        match generic {
+            GenericParam::Type(t) => {
+                t.eq_token = None;
+                t.default = None;
+            }
+            GenericParam::Lifetime(lt) => {}
+            GenericParam::Const(c) => {
+                c.eq_token = None;
+                c.default = None;
+            }
+        }
+    }
+}
+
 fn add_type_impl(output: &mut TokenStream, trait_to_impl: &DerivedType, obj: &StructOrEnum) {
     let ident = obj.ident();
     let generics = obj.generics();
     let gen_names = extract_idents(&generics);
     let gen_lt = generics.lt_token;
-    let gen_params = generics.params;
     let gen_gt = generics.gt_token;
+
+    let mut impl_generic_introduction = generics.clone();
+    remove_defaults(&mut impl_generic_introduction);
+    let gen_params = impl_generic_introduction.params;
     let gen_where = augment_where_clause(generics.where_clause, trait_to_impl, obj);
 
     let trait_ident = trait_to_impl.path();

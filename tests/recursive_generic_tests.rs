@@ -2,10 +2,10 @@ use perfect_derive::perfect_derive;
 use std::ops::Deref;
 use std::rc::Rc;
 
-struct NonClonable {}
+pub struct NonClonable {}
 
 #[perfect_derive(Clone)]
-struct List<T> {
+pub struct List<T> {
     data: Rc<T>,
     next: Option<Rc<List<T>>>,
 }

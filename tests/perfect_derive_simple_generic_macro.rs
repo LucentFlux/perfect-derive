@@ -4,13 +4,13 @@ macro_rules! make_test {
             use perfect_derive::perfect_derive;
 
             #[perfect_derive($trait_name $(,$trait_name_tail)*)]
-            struct Struct<U, T> {
+            pub struct Struct<U, T> {
                 v1: T,
                 pub v2: U,
             }
 
             #[perfect_derive($trait_name $(,$trait_name_tail)*)]
-            enum Enum<U, T> {
+            pub enum Enum<U, T> {
                 E1,
                 E2(),
                 E3(usize),

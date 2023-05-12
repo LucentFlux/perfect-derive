@@ -5,13 +5,13 @@ macro_rules! make_test {
             use perfect_derive::perfect_derive;
 
             #[perfect_derive($trait_name $(,$trait_name_tail)*)]
-            struct Struct {
+            pub struct Struct {
                 v1: usize,
                 pub v2: i32,
             }
 
             #[perfect_derive($trait_name $(,$trait_name_tail)*)]
-            enum Enum {
+            pub enum Enum {
                 E1,
                 E2(),
                 E3(usize),
@@ -88,10 +88,10 @@ pub fn copy_full_enum_eq() {
 }
 
 // check that default on enum doesn't require default on non-default objects
-struct NonDefaultable {}
+pub struct NonDefaultable {}
 
 #[perfect_derive(Default)]
-enum DefaultableEnum {
+pub enum DefaultableEnum {
     E1(NonDefaultable),
     #[default]
     E2(usize),
