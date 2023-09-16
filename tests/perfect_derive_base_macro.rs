@@ -20,6 +20,12 @@ macro_rules! make_test {
             pub struct Struct3;
 
             #[perfect_derive($trait_name $(,$trait_name_tail)*)]
+            pub struct Struct4 {
+                #[allow(unused)]
+                pub(super) r#fn: bool
+            }
+
+            #[perfect_derive($trait_name $(,$trait_name_tail)*)]
             pub enum Enum {
                 E1,
                 E2(),
@@ -32,6 +38,7 @@ macro_rules! make_test {
             mod inner {
                 use super::*;
                 use std::fmt::Debug;
+                use std::hash::Hash;
 
                 #[test]
                 pub fn $method_name()
@@ -39,6 +46,7 @@ macro_rules! make_test {
                     Struct: $trait_name,
                     Struct2: $trait_name,
                     Struct3: $trait_name,
+                    Struct4: $trait_name,
                     Enum: $trait_name,
                 {
                     // No need to do anything
@@ -55,6 +63,7 @@ make_test!(Eq, PartialEq; eq);
 make_test!(Ord, Eq, PartialOrd, PartialEq; ord);
 make_test!(PartialOrd, PartialEq; pord);
 make_test!(Debug; debug);
+make_test!(Hash; hash);
 
 #[perfect_derive(Copy, Clone, Ord, Eq, PartialOrd, PartialEq, Debug, Hash, Default)]
 struct EverythingStruct {

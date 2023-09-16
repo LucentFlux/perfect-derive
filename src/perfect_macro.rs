@@ -107,7 +107,7 @@ fn remove_defaults(generics: &mut Generics) {
                 t.eq_token = None;
                 t.default = None;
             }
-            GenericParam::Lifetime(lt) => {}
+            GenericParam::Lifetime(_) => {}
             GenericParam::Const(c) => {
                 c.eq_token = None;
                 c.default = None;
@@ -115,6 +115,38 @@ fn remove_defaults(generics: &mut Generics) {
         }
     }
 }
+
+/*fn remove_attrs(generics: &mut Generics) {
+    for generic in generics.params.iter_mut() {
+        match generic {
+            GenericParam::Type(t) => {
+                t.attrs = vec![];
+            }
+            GenericParam::Lifetime(lt) => {
+                lt.attrs = vec![];
+            }
+            GenericParam::Const(c) => {
+                c.attrs = vec![];
+            }
+        }
+    }
+}*/
+
+/*fn remove_bounds(generics: &mut Generics) {
+    for generic in generics.params.iter_mut() {
+        match generic {
+            GenericParam::Type(t) => {
+                t.colon_token = None;
+                t.bounds = Punctuated::default();
+            }
+            GenericParam::Lifetime(lt) => {
+                lt.colon_token = None;
+                lt.bounds = Punctuated::default();
+            }
+            GenericParam::Const(_) => {}
+        }
+    }
+}*/
 
 fn add_type_impl(output: &mut TokenStream, trait_to_impl: &DerivedType, obj: &StructOrEnum) {
     let ident = obj.ident();
@@ -125,6 +157,8 @@ fn add_type_impl(output: &mut TokenStream, trait_to_impl: &DerivedType, obj: &St
 
     let mut impl_generic_introduction = generics.clone();
     remove_defaults(&mut impl_generic_introduction);
+    //remove_attrs(&mut impl_generic_introduction);
+    //remove_bounds(&mut impl_generic_introduction);
     let gen_params = impl_generic_introduction.params;
     let gen_where = augment_where_clause(generics.where_clause, trait_to_impl, obj);
 
@@ -209,16 +243,23 @@ fn augment_where_clause(
 }
 
 fn get_named_idents(names: &FieldsNamed) -> Vec<Ident> {
-    get_named_idents_prefix(names, "")
+    names
+        .named
+        .iter()
+        .map(|f| f.ident.clone().unwrap())
+        .collect::<Vec<_>>()
 }
 
-fn get_named_idents_prefix(names: &FieldsNamed, prefix: &str) -> Vec<Ident> {
+fn get_named_idents_suffix(names: &FieldsNamed, suffix: &str) -> Vec<Ident> {
+    assert!(suffix != "");
     names
         .named
         .iter()
         .map(|f| {
             let ident = f.ident.clone().unwrap();
-            let new_name = format!("{}{}", prefix, ident.to_string());
+            let ident = ident.to_string();
+            let ident = ident.replace("r#", "");
+            let new_name = format!("{}{}", ident, suffix);
             Ident::new(&new_name, ident.span())
         })
         .collect::<Vec<_>>()
@@ -366,8 +407,8 @@ fn peq_enum(e: &ItemEnum) -> TokenStream {
             match &v.fields {
                 Fields::Named(names) => {
                     let idents = get_named_idents(names);
-                    let idents1 = get_named_idents_prefix(names, "u");
-                    let idents2 = get_named_idents_prefix(names, "v");
+                    let idents1 = get_named_idents_suffix(names, "u");
+                    let idents2 = get_named_idents_suffix(names, "v");
 
                     quote! {
                         (Self::#ident{#(#idents: #idents1),*}, Self::#ident{#(#idents: #idents2),*})
@@ -483,8 +524,8 @@ fn ord_enum(e: &ItemEnum) -> TokenStream {
             match &v.fields {
                 Fields::Named(names) => {
                     let idents = get_named_idents(names);
-                    let idents1 = get_named_idents_prefix(names, "u");
-                    let idents2 = get_named_idents_prefix(names, "v");
+                    let idents1 = get_named_idents_suffix(names, "u");
+                    let idents2 = get_named_idents_suffix(names, "v");
 
                     quote! {
                         (Self::#ident{#(#idents: #idents1),*}, Self::#ident{#(#idents: #idents2),*})
@@ -565,8 +606,8 @@ fn pord_enum(e: &ItemEnum) -> TokenStream {
             match &v.fields {
                 Fields::Named(names) => {
                     let idents = get_named_idents(names);
-                    let idents1 = get_named_idents_prefix(names, "u");
-                    let idents2 = get_named_idents_prefix(names, "v");
+                    let idents1 = get_named_idents_suffix(names, "u");
+                    let idents2 = get_named_idents_suffix(names, "v");
 
                     quote! {
                         (Self::#ident{#(#idents: #idents1),*}, Self::#ident{#(#idents: #idents2),*})
@@ -703,9 +744,11 @@ fn debug_struct(s: &ItemStruct) -> TokenStream {
 
             quote! {
                 fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                    let Self( #(#idents),* ) = self;
+
                     f.debug_tuple(stringify!(#name))
                     #(
-                        .field(&self.#idents)
+                        .field(#idents)
                     )*
                         .finish()
                 }
