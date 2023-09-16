@@ -11,6 +11,15 @@ macro_rules! make_test {
             }
 
             #[perfect_derive($trait_name $(,$trait_name_tail)*)]
+            pub struct Struct2 (
+                pub(crate) usize,
+                pub i32,
+            );
+
+            #[perfect_derive($trait_name $(,$trait_name_tail)*)]
+            pub struct Struct3;
+
+            #[perfect_derive($trait_name $(,$trait_name_tail)*)]
             pub enum Enum {
                 E1,
                 E2(),
@@ -19,13 +28,21 @@ macro_rules! make_test {
                 E5{name1: u32, name2: ()},
             }
 
-            #[test]
-            pub fn $method_name()
-            where
-                Struct: $trait_name,
-                Enum: $trait_name,
-            {
-                // No need to do anything
+
+            mod inner {
+                use super::*;
+                use std::fmt::Debug;
+
+                #[test]
+                pub fn $method_name()
+                where
+                    Struct: $trait_name,
+                    Struct2: $trait_name,
+                    Struct3: $trait_name,
+                    Enum: $trait_name,
+                {
+                    // No need to do anything
+                }
             }
         }
     };
@@ -37,6 +54,7 @@ make_test!(PartialEq; peq);
 make_test!(Eq, PartialEq; eq);
 make_test!(Ord, Eq, PartialOrd, PartialEq; ord);
 make_test!(PartialOrd, PartialEq; pord);
+make_test!(Debug; debug);
 
 #[perfect_derive(Copy, Clone, Ord, Eq, PartialOrd, PartialEq, Debug, Hash, Default)]
 struct EverythingStruct {
