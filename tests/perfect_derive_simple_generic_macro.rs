@@ -16,6 +16,18 @@ macro_rules! make_test {
             );
 
             #[perfect_derive($trait_name $(,$trait_name_tail)*)]
+            pub struct Struct3<T, U: T> {
+                v1: T,
+                v2: U
+            }
+
+            #[perfect_derive($trait_name $(,$trait_name_tail)*)]
+            pub struct Struct4<'a, 'b: 'a, T> {
+                v1: &'a T,
+                v2: &'b T
+            }
+
+            #[perfect_derive($trait_name $(,$trait_name_tail)*)]
             pub enum Enum<U, T> {
                 E1,
                 E2(),
@@ -24,6 +36,7 @@ macro_rules! make_test {
                 E5{name1: T, name2: ()},
             }
 
+            #[allow(unused_imports)]
             mod inner {
                 use super::*;
                 use std::fmt::Debug;
@@ -33,6 +46,8 @@ macro_rules! make_test {
                 where
                     Struct<u32, usize>: $trait_name,
                     Struct2<u8, isize>: $trait_name,
+                    Struct3<u64, u64>: $trait_name,
+                    Struct4<'static, 'static, isize>: $trait_name,
                     Enum<i64, ()>: $trait_name,
                 {
                     // No need to do anything

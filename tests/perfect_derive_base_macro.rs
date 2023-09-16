@@ -28,7 +28,7 @@ macro_rules! make_test {
                 E5{name1: u32, name2: ()},
             }
 
-
+            #[allow(unused_imports)]
             mod inner {
                 use super::*;
                 use std::fmt::Debug;
