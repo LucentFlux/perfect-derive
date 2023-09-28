@@ -1,4 +1,7 @@
 # Perfect Derive
+[![crates.io](https://img.shields.io/crates/v/perfect-derive.svg)](https://crates.io/crates/perfect-derive)
+[![crates.io](https://img.shields.io/crates/l/perfect-derive.svg)](https://github.com/LucentFlux/perfect-derive/blob/main/LICENSE)
+
 Adds derive macros for better bounds on generated Copy, Debug, etc. implementations.
 
 See [this blog post](https://smallcultfollowing.com/babysteps//blog/2022/04/12/implied-bounds-and-perfect-derive/) for a summary of the issue.
