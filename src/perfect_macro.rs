@@ -17,9 +17,9 @@ fn is_attribute_default(a: &Attribute) -> bool {
     }
 
     // attribute is exactly `#[default]`
-    a.path.leading_colon.is_none()
-        && a.path.segments.len() == 1
-        && a.path
+    a.path().leading_colon.is_none()
+        && a.path().segments.len() == 1
+        && a.path()
             .segments
             .iter()
             .all(|i| i.ident.to_string() == "default" && i.arguments.is_empty())

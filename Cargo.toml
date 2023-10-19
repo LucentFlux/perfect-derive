@@ -1,6 +1,6 @@
 [package]
 name = "perfect-derive"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 license = "MIT"
 description = "Provides a prototype of the proposed perfect_derive macro"
@@ -21,7 +21,7 @@ include = [
 syn = { version = "2.0", features=["full"] }
 proc-macro2 = "1.0"
 quote = "1.0"
-cps = "0.2.1"
+cps = "0.2"
 
 [dev-dependencies]
 thiserror = "1.0"
