@@ -1,5 +1,6 @@
 # Perfect Derive
 [![crates.io](https://img.shields.io/crates/v/perfect-derive.svg)](https://crates.io/crates/perfect-derive)
+[![docs.rs](https://img.shields.io/docsrs/perfect-derive)](https://docs.rs/perfect-derive/latest/perfect_derive/)
 [![crates.io](https://img.shields.io/crates/l/perfect-derive.svg)](https://github.com/LucentFlux/perfect-derive/blob/main/LICENSE)
 
 Adds derive macros for better bounds on generated Copy, Debug, etc. implementations.
