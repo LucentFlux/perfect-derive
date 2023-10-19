@@ -18,7 +18,7 @@ include = [
 ]
 
 [dependencies]
-syn = { version = "1.0", features=["full"] }
+syn = { version = "2.0", features=["full"] }
 proc-macro2 = "1.0"
 quote = "1.0"
 cps = "0.2.1"
