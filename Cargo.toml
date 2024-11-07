@@ -24,7 +24,7 @@ quote = "1.0"
 cps = "0.2"
 
 [dev-dependencies]
-thiserror = "1.0"
+thiserror = "2.0"
 
 [lib]
 proc-macro = true
