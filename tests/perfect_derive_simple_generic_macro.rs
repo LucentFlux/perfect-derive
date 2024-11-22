@@ -1,5 +1,6 @@
 macro_rules! make_test {
     ($trait_name:ident $(,$trait_name_tail:ident)*; $method_name:ident) => {
+        #[allow(unused)]
         mod $method_name {
             use perfect_derive::perfect_derive;
 

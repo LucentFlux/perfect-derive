@@ -50,7 +50,7 @@ impl DerivedType {
             _ => {} // fall through to default unscoped path
         }
 
-        return type_enum_ident_as_path!(self);
+        type_enum_ident_as_path!(self)
     }
 
     pub fn get_trait(&self) -> TraitBound {
@@ -91,7 +91,7 @@ impl Parse for DerivedType {
         parse_types_enum! {
             match name {
                 ident...,
-                _ => Err(input.error(format!("type identifier {} is not supported - did you mean to use #[derive(...)]?", ident.to_string())))
+                _ => Err(input.error(format!("type identifier {} is not supported - did you mean to use #[derive(...)]?", ident)))
             }
         }
     }

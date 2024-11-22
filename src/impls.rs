@@ -14,4 +14,5 @@ macro_rules! impls {
     };
 }
 
+#[allow(clippy::single_component_path_imports)]
 pub(crate) use impls;

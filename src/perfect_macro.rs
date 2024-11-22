@@ -22,7 +22,7 @@ fn is_attribute_default(a: &Attribute) -> bool {
         && a.path()
             .segments
             .iter()
-            .all(|i| i.ident.to_string() == "default" && i.arguments.is_empty())
+            .all(|i| i.ident == "default" && i.arguments.is_empty())
 }
 
 fn remove_debug_markers(obj: &mut StructOrEnum) {
@@ -55,7 +55,7 @@ pub fn impl_traits(traits: DerivedList, mut obj: StructOrEnum) -> TokenStream {
         if already_derived.contains(&derived.name) {
             panic!("cannot derive {:?} twice", derived.name)
         }
-        already_derived.insert(derived.name.clone());
+        already_derived.insert(derived.name);
 
         add_type_impl(&mut output, &derived, &obj);
     }
@@ -71,7 +71,7 @@ pub fn impl_traits(traits: DerivedList, mut obj: StructOrEnum) -> TokenStream {
         #output
     };
 
-    return output;
+    output
 }
 
 enum IdentOrLifetime {
@@ -182,7 +182,7 @@ fn get_debug_enum_marker(enum_item: &ItemEnum) -> &Variant {
         .filter(|v| v.attrs.iter().any(is_attribute_default))
         .collect::<Vec<_>>();
     assert!(
-        default_variants.len() > 0,
+        !default_variants.is_empty(),
         "one enum variant must be marked as default"
     );
     assert_eq!(
@@ -229,17 +229,17 @@ fn augment_where_clause(
     let mut predicates = clause
         .as_ref()
         .map(|c| c.predicates.clone())
-        .unwrap_or(Punctuated::new());
+        .unwrap_or_default();
     for predicate in extra {
         predicates.push(predicate)
     }
 
-    return WhereClause {
+    WhereClause {
         where_token: clause.map(|c| c.where_token).unwrap_or(Where {
             span: trait_to_impl.span,
         }),
         predicates,
-    };
+    }
 }
 
 fn get_named_idents(names: &FieldsNamed) -> Vec<Ident> {
@@ -251,7 +251,7 @@ fn get_named_idents(names: &FieldsNamed) -> Vec<Ident> {
 }
 
 fn get_named_idents_suffix(names: &FieldsNamed, suffix: &str) -> Vec<Ident> {
-    assert!(suffix != "");
+    assert!(!suffix.is_empty());
     names
         .named
         .iter()
@@ -569,7 +569,7 @@ fn pord_struct(s: &ItemStruct) -> TokenStream {
             quote! {
                 fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
                     Some(std::cmp::Ordering::Equal) #(
-                        .and_then(|o| self.#idents.partial_cmp(&other.#idents).map(|v| v.then(o)))
+                        .and_then(|o| self.#idents.partial_cmp(&other.#idents).map(|v| o.then(v)))
                     )*
                 }
             }
@@ -584,7 +584,7 @@ fn pord_struct(s: &ItemStruct) -> TokenStream {
                     let Self( #(#idents2),* ) = other;
 
                     Some(std::cmp::Ordering::Equal) #(
-                        .and_then(|o| #idents1.partial_cmp(#idents2).map(|v| v.then(o)))
+                        .and_then(|o| #idents1.partial_cmp(#idents2).map(|v| o.then(v)))
                     )*
                 }
             }
@@ -612,7 +612,7 @@ fn pord_enum(e: &ItemEnum) -> TokenStream {
                     quote! {
                         (Self::#ident{#(#idents: #idents1),*}, Self::#ident{#(#idents: #idents2),*})
                             => Some(std::cmp::Ordering::Equal) #(
-                                .and_then(|o| #idents1.partial_cmp(#idents2).map(|v| v.then(o)))
+                                .and_then(|o| #idents1.partial_cmp(#idents2).map(|v| o.then(v)))
                             )*
                     }
                 }
@@ -623,7 +623,7 @@ fn pord_enum(e: &ItemEnum) -> TokenStream {
                     quote! {
                         (Self::#ident(#(#idents1),*), Self::#ident(#(#idents2),*))
                             => Some(std::cmp::Ordering::Equal) #(
-                                .and_then(|o| #idents1.partial_cmp(#idents2).map(|v| v.then(o)))
+                                .and_then(|o| #idents1.partial_cmp(#idents2).map(|v| o.then(v)))
                             )*
                     }
                 }
@@ -714,6 +714,8 @@ fn hash_enum(e: &ItemEnum) -> TokenStream {
 
     quote! {
         fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+            let dis = std::mem::discriminant(self);
+            dis.hash(state);
             match self {
                 #(
                     #variant_cases,
