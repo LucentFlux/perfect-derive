@@ -561,16 +561,31 @@ fn ord_enum(e: &ItemEnum) -> TokenStream {
     }
 }
 
+fn build_nested_tuple(ids: &[impl ToTokens]) -> TokenStream {
+    let Some(id1) = ids.first() else {
+        return quote! { () };
+    };
+    let rest = build_nested_tuple(&ids[1..]);
+    quote! {
+        (#id1, #rest)
+    }
+}
+
 fn pord_struct(s: &ItemStruct) -> TokenStream {
     match &s.fields {
         Fields::Named(names) => {
             let idents = get_named_idents(names);
+            let idents1: Vec<TokenStream> =
+                idents.iter().map(|ident| quote! {&self.#ident}).collect();
+            let idents2: Vec<TokenStream> =
+                idents.iter().map(|ident| quote! {&other.#ident}).collect();
+
+            let t1 = build_nested_tuple(&idents1);
+            let t2 = build_nested_tuple(&idents2);
 
             quote! {
                 fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-                    Some(std::cmp::Ordering::Equal) #(
-                        .and_then(|o| self.#idents.partial_cmp(&other.#idents).map(|v| o.then(v)))
-                    )*
+                    #t1.partial_cmp(&#t2)
                 }
             }
         }
@@ -578,14 +593,15 @@ fn pord_struct(s: &ItemStruct) -> TokenStream {
             let idents1 = get_unnamed_idents_prefix(unnamed, "u");
             let idents2 = get_unnamed_idents_prefix(unnamed, "v");
 
+            let t1 = build_nested_tuple(&idents1);
+            let t2 = build_nested_tuple(&idents2);
+
             quote! {
                 fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
                     let Self( #(#idents1),* ) = self;
                     let Self( #(#idents2),* ) = other;
 
-                    Some(std::cmp::Ordering::Equal) #(
-                        .and_then(|o| #idents1.partial_cmp(#idents2).map(|v| o.then(v)))
-                    )*
+                    #t1.partial_cmp(&#t2)
                 }
             }
         }
@@ -609,22 +625,24 @@ fn pord_enum(e: &ItemEnum) -> TokenStream {
                     let idents1 = get_named_idents_suffix(names, "u");
                     let idents2 = get_named_idents_suffix(names, "v");
 
+                    let t1 = build_nested_tuple(&idents1);
+                    let t2 = build_nested_tuple(&idents2);
+
                     quote! {
                         (Self::#ident{#(#idents: #idents1),*}, Self::#ident{#(#idents: #idents2),*})
-                            => Some(std::cmp::Ordering::Equal) #(
-                                .and_then(|o| #idents1.partial_cmp(#idents2).map(|v| o.then(v)))
-                            )*
+                            => #t1.partial_cmp(&#t2)
                     }
                 }
                 Fields::Unnamed(unnamed) => {
                     let idents1 = get_unnamed_idents_prefix(unnamed, "u");
                     let idents2 = get_unnamed_idents_prefix(unnamed, "v");
 
+                    let t1 = build_nested_tuple(&idents1);
+                    let t2 = build_nested_tuple(&idents2);
+
                     quote! {
                         (Self::#ident(#(#idents1),*), Self::#ident(#(#idents2),*))
-                            => Some(std::cmp::Ordering::Equal) #(
-                                .and_then(|o| #idents1.partial_cmp(#idents2).map(|v| o.then(v)))
-                            )*
+                            => #t1.partial_cmp(&#t2)
                     }
                 }
                 Fields::Unit => quote! {
@@ -765,13 +783,12 @@ fn debug_struct(s: &ItemStruct) -> TokenStream {
 }
 
 fn debug_enum(e: &ItemEnum) -> TokenStream {
-    let name = e.ident.clone();
     let variant_cases = e
         .variants
         .iter()
         .map(|v| {
             let ident = v.ident.clone();
-            let name = quote! { concat!(stringify!(#name), "::", stringify!(#ident)) };
+            let name = quote! { stringify!(#ident) };
             match &v.fields {
                 Fields::Named(names) => {
                     let idents = get_named_idents(names);
